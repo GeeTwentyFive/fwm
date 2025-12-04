@@ -78,16 +78,15 @@ int main(int argc, char* argv[]) {
         for (;;) {
                 XNextEvent(display, &event);
 
-                if (event.type == MapRequest) { // Add to end of windows array (if not full) + fullscreen
+                if (event.type == MapRequest) { // Add to end of windows array (if not full) + fullscreen + focus
                         if (windows_count == MAX_WINDOWS) {
                                 XKillClient(display, event.xmaprequest.window);
                                 continue;
                         }
 
                         windows[windows_count] = event.xmaprequest.window;
+                        selected_window_index = windows_count;
                         windows_count++;
-
-                        selected_window_index = windows[windows_count];
 
                         XConfigureWindow(
                                 display,
@@ -98,7 +97,9 @@ int main(int argc, char* argv[]) {
 
                         XMapWindow(display, event.xmaprequest.window);
 
-                        XRaiseWindow(display, windows[selected_window_index]);
+                        XRaiseWindow(display, event.xmaprequest.window);
+
+                        XSetInputFocus(display, event.xmaprequest.window, RevertToParent, CurrentTime);
                 }
                 else if (event.type == DestroyNotify) { // Remove from windows array
                         int window_index = -1;
@@ -115,6 +116,10 @@ int main(int argc, char* argv[]) {
                         windows_count--;
                         selected_window_index--;
                         if (selected_window_index == -1) selected_window_index = 0;
+
+                        XRaiseWindow(display, windows[selected_window_index]);
+
+                        XSetInputFocus(display, windows[selected_window_index], RevertToParent, CurrentTime);
                 }
                 else if (event.type == KeyPress) {
                         if (!(event.xkey.state & MODIFIER)) continue;
@@ -139,6 +144,8 @@ int main(int argc, char* argv[]) {
                                         selected_window_index--;
 
                                 XRaiseWindow(display, windows[selected_window_index]);
+
+                                XSetInputFocus(display, windows[selected_window_index], RevertToParent, CurrentTime);
                         }
                         else if (keycode == move_right_keycode) {
                                 if (windows_count == 0) continue;
@@ -149,6 +156,8 @@ int main(int argc, char* argv[]) {
                                         selected_window_index++;
 
                                 XRaiseWindow(display, windows[selected_window_index]);
+
+                                XSetInputFocus(display, windows[selected_window_index], RevertToParent, CurrentTime);
                         }
                 }
         }
