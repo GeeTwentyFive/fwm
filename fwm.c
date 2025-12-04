@@ -58,10 +58,10 @@ int main(int argc, char* argv[]) {
         move_left_keycode = XKeysymToKeycode(display, MOVE_LEFT_KEY);
         move_right_keycode = XKeysymToKeycode(display, MOVE_RIGHT_KEY);
 
-        XGrabKey(display, start_terminal_keycode, MODIFIER, root, True, GrabModeAsync, GrabModeAsync);
-        XGrabKey(display, kill_window_keycode, MODIFIER, root, True, GrabModeAsync, GrabModeAsync);
-        XGrabKey(display, move_left_keycode, MODIFIER, root, True, GrabModeAsync, GrabModeAsync);
-        XGrabKey(display, move_right_keycode, MODIFIER, root, True, GrabModeAsync, GrabModeAsync);
+        XGrabKey(display, start_terminal_keycode, AnyModifier, root, True, GrabModeAsync, GrabModeAsync);
+        XGrabKey(display, kill_window_keycode, AnyModifier, root, True, GrabModeAsync, GrabModeAsync);
+        XGrabKey(display, move_left_keycode, AnyModifier, root, True, GrabModeAsync, GrabModeAsync);
+        XGrabKey(display, move_right_keycode, AnyModifier, root, True, GrabModeAsync, GrabModeAsync);
 
         XSync(display, False);
 
@@ -98,16 +98,24 @@ int main(int argc, char* argv[]) {
                                 windows[i] = windows[i+1];
                         }
                         windows_count--;
+                        selected_window_index--;
+                        if (selected_window_index == -1) selected_window_index = 0;
                 }
                 else if (event.type == KeyPress) {
+                        if (!(event.xkey.state & MODIFIER)) continue;
+
                         KeyCode keycode = event.xkey.keycode;
                         if (keycode == start_terminal_keycode) {
                                 system(terminal_emulator);
                         }
                         else if (keycode == kill_window_keycode) {
+                                if (windows_count == 0) continue;
+
                                 XKillClient(display, windows[selected_window_index]);
                         }
                         else if (keycode == move_left_keycode) {
+                                if (windows_count == 0) continue;
+
                                 if (selected_window_index == 0)
                                         selected_window_index = windows_count-1;
                                 else
@@ -116,6 +124,8 @@ int main(int argc, char* argv[]) {
                                 XRaiseWindow(display, windows[selected_window_index]);
                         }
                         else if (keycode == move_right_keycode) {
+                                if (windows_count == 0) continue;
+
                                 if (selected_window_index == windows_count-1)
                                         selected_window_index = 0;
                                 else
