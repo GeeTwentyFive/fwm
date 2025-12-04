@@ -2,9 +2,16 @@
 #include <X11/keysym.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 
 
 #define MAX_WINDOWS 64
+
+#define MODIFIER Mod4Mask // Windows key
+#define START_TERMINAL_KEY XK_space // Start terminal emulator
+#define KILL_WINDOW_KEY XK_Escape // Kill focused window
+#define MOVE_LEFT_KEY XK_Control_L // Decrement selected window index
+#define MOVE_RIGHT_KEY XK_Alt_L // Increment selected window index
 
 
 Window windows[MAX_WINDOWS];
@@ -13,7 +20,22 @@ int selected_window_index = 0;
 
 XWindowChanges fullscreen_window_changes = {0};
 
-int main() {
+KeyCode start_terminal_keycode;
+KeyCode kill_window_keycode;
+KeyCode move_left_keycode;
+KeyCode move_right_keycode;
+
+char* terminal_emulator;
+
+int main(int argc, char* argv[]) {
+        if (argc != 2) {
+                puts("USAGE: fwm <TERMINAL_EMULATOR>");
+                return 1;
+        }
+
+        terminal_emulator = argv[1];
+
+
         Display* display = XOpenDisplay(NULL);
         if (!display) {
                 fprintf(stderr, "ERROR: Failed to connect to X server\n");
@@ -31,32 +53,15 @@ int main() {
 
         XSelectInput(display, root, SubstructureRedirectMask|SubstructureNotifyMask);
 
-        XGrabKey(display, XKeysymToKeycode(display, XK_space), Mod4Mask, root, True, GrabModeAsync, GrabModeAsync);
-        XGrabKey(display, XKeysymToKeycode(display, XK_Escape), Mod4Mask, root, True, GrabModeAsync, GrabModeAsync);
-        XGrabKey(display, XKeysymToKeycode(display, XK_Left), Mod4Mask, root, True, GrabModeAsync, GrabModeAsync);
-        XGrabKey(display, XKeysymToKeycode(display, XK_Right), Mod4Mask, root, True, GrabModeAsync, GrabModeAsync);
+        start_terminal_keycode = XKeysymToKeycode(display, START_TERMINAL_KEY);
+        kill_window_keycode = XKeysymToKeycode(display, KILL_WINDOW_KEY);
+        move_left_keycode = XKeysymToKeycode(display, MOVE_LEFT_KEY);
+        move_right_keycode = XKeysymToKeycode(display, MOVE_RIGHT_KEY);
 
-        // Query for already-opened windows -> add to array
-        Window *qroot, *qparent, **qchildren;
-        int qchildren_count;
-        if (XQueryTree(display, root, &qroot, &qparent, &qchildren, &qchildren_count)) {
-                for (int i = 0; i < qchildren_count; i++) {
-                        if (windows_count == MAX_WINDOWS) {
-                                XKillClient(display, qchildren[i]);
-                                continue;
-                        }
-
-                        windows[windows_count] = qchildren[i];
-                        windows_count++;
-
-                        XConfigureWindow(
-                                display,
-                                qchildren[i],
-                                CWX|CWY|CWWidth|CWHeight,
-                                &fullscreen_window_changes
-                        );
-                }
-        }
+        XGrabKey(display, start_terminal_keycode, MODIFIER, root, True, GrabModeAsync, GrabModeAsync);
+        XGrabKey(display, kill_window_keycode, MODIFIER, root, True, GrabModeAsync, GrabModeAsync);
+        XGrabKey(display, move_left_keycode, MODIFIER, root, True, GrabModeAsync, GrabModeAsync);
+        XGrabKey(display, move_right_keycode, MODIFIER, root, True, GrabModeAsync, GrabModeAsync);
 
         XSync(display, False);
 
@@ -95,11 +100,29 @@ int main() {
                         windows_count--;
                 }
                 else if (event.type == KeyPress) {
-                        // TODO:
-                        // For Win+Escape: kill selected_window's process, let DestroyNotify handler handle rest
-                        // For Win+Space: start default terminal with qexec input -> exit command chain
-                        // For Win+Right: selected_window = selected_window->next; + XRaiseWindow()
-                        // For Win+Left: selected_window = selected_window->prev; + XRaiseWindow()
+                        KeyCode keycode = event.xkey.keycode;
+                        if (keycode == start_terminal_keycode) {
+                                system(terminal_emulator);
+                        }
+                        else if (keycode == kill_window_keycode) {
+                                XKillClient(display, windows[selected_window_index]);
+                        }
+                        else if (keycode == move_left_keycode) {
+                                if (selected_window_index == 0)
+                                        selected_window_index = windows_count-1;
+                                else
+                                        selected_window_index--;
+
+                                XRaiseWindow(display, windows[selected_window_index]);
+                        }
+                        else if (keycode == move_right_keycode) {
+                                if (selected_window_index == windows_count-1)
+                                        selected_window_index = 0;
+                                else
+                                        selected_window_index++;
+
+                                XRaiseWindow(display, windows[selected_window_index]);
+                        }
                 }
         }
 
