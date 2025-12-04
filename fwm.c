@@ -109,7 +109,6 @@ int main(int argc, char* argv[]) {
 
                         if (window_index == -1) continue;
 
-                        windows[window_index] = 0; // (if at end)
                         for (int i = window_index; i < windows_count-1; i++) {
                                 windows[i] = windows[i+1];
                         }
@@ -122,20 +121,17 @@ int main(int argc, char* argv[]) {
                         XSetInputFocus(display, windows[selected_window_index], RevertToParent, CurrentTime);
                 }
                 else if (event.type == KeyPress) {
-                        if (!(event.xkey.state & MODIFIER)) continue;
-
-                        KeyCode keycode = event.xkey.keycode;
-                        if (keycode == start_terminal_keycode) {
+                        if (event.xkey.keycode == start_terminal_keycode) {
                                 if (fork() == 0) {
                                         execvp(terminal_emulator, NULL);
                                 }
                         }
-                        else if (keycode == kill_window_keycode) {
+                        else if (event.xkey.keycode == kill_window_keycode) {
                                 if (windows_count == 0) continue;
 
                                 XKillClient(display, windows[selected_window_index]);
                         }
-                        else if (keycode == move_left_keycode) {
+                        else if (event.xkey.keycode == move_left_keycode) {
                                 if (windows_count == 0) continue;
 
                                 if (selected_window_index == 0)
@@ -147,7 +143,7 @@ int main(int argc, char* argv[]) {
 
                                 XSetInputFocus(display, windows[selected_window_index], RevertToParent, CurrentTime);
                         }
-                        else if (keycode == move_right_keycode) {
+                        else if (event.xkey.keycode == move_right_keycode) {
                                 if (windows_count == 0) continue;
 
                                 if (selected_window_index == windows_count-1)
