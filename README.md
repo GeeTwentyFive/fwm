@@ -1,7 +1,7 @@
 Fullscreen-only minimalistic X11 window manager
 
 # Build
-`gcc -O2 -march=native -mtune=native fwm -lX11 -o fwm`
+`gcc -O2 fwm -lX11 -o fwm`
 
 # Install
 1) Move `fwm` to `/usr/bin/`
