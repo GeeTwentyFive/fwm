@@ -69,21 +69,27 @@ int main(int argc, char* argv[]) {
         for (;;) {
                 XNextEvent(display, &event);
 
-                if (event.type == CreateNotify) { // Add to end of windows array (if not full) + fullscreen
+                if (event.type == MapRequest) { // Add to end of windows array (if not full) + fullscreen
                         if (windows_count == MAX_WINDOWS) {
-                                XKillClient(display, event.xcreatewindow.window);
+                                XKillClient(display, event.xmaprequest.window);
                                 continue;
                         }
 
-                        windows[windows_count] = event.xcreatewindow.window;
+                        windows[windows_count] = event.xmaprequest.window;
                         windows_count++;
+
+                        selected_window_index = windows[windows_count];
 
                         XConfigureWindow(
                                 display,
-                                event.xcreatewindow.window,
+                                event.xmaprequest.window,
                                 CWX|CWY|CWWidth|CWHeight,
                                 &fullscreen_window_changes
                         );
+
+                        XMapWindow(display, event.xmaprequest.window);
+
+                        XRaiseWindow(display, windows[selected_window_index]);
                 }
                 else if (event.type == DestroyNotify) { // Remove from windows array
                         int window_index = -1;
