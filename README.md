@@ -9,7 +9,7 @@ Fullscreen-only minimalistic X11 window manager
 
 # Usage
 `startx`
-- Win+Space - launch terminal
-- Win+Escape - kill selected window
-- Win+X - decrement selected window index
-- Win+C - increment selected window index
+- Win+Space = launch terminal (intended to be used with https://github.com/GeeTwentyFive/LinuxQuietExec)
+- Win+Escape = kill selected window
+- Win+X = decrement selected window index
+- Win+C = increment selected window index
