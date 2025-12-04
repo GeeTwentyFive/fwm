@@ -4,7 +4,7 @@ Fullscreen-only minimalistic X11 window manager
 `gcc -O2 fwm -lX11 -o fwm`
 
 # Install
-1) Move `fwm` to `/usr/bin/`
+1) `sudo mv fwm /usr/bin/`
 2) `echo "exec fwm <YOUR_TERMINAL_EMULATOR>" > ~/.xinitrc`
 
 # Usage
