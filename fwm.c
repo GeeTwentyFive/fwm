@@ -2,7 +2,7 @@
 #include <X11/keysym.h>
 
 #include <stdio.h>
-#include <stdlib.h>
+#include <unistd.h>
 
 
 #define MAX_WINDOWS 64
@@ -112,7 +112,9 @@ int main(int argc, char* argv[]) {
 
                         KeyCode keycode = event.xkey.keycode;
                         if (keycode == start_terminal_keycode) {
-                                system(terminal_emulator);
+                                if (fork() == 0) {
+                                        execvp(terminal_emulator, NULL);
+                                }
                         }
                         else if (keycode == kill_window_keycode) {
                                 if (windows_count == 0) continue;
