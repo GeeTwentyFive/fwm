@@ -10,8 +10,15 @@
 #define MODIFIER Mod4Mask // Windows key
 #define START_TERMINAL_KEY XK_space // Start terminal emulator
 #define KILL_WINDOW_KEY XK_Escape // Kill focused window
-#define MOVE_LEFT_KEY XK_Control_L // Decrement selected window index
-#define MOVE_RIGHT_KEY XK_Alt_L // Increment selected window index
+#define MOVE_LEFT_KEY XK_X // Decrement selected window index
+#define MOVE_RIGHT_KEY XK_C // Increment selected window index
+
+const int EXTRA_MODIFIERS[] = {
+        0,
+        LockMask,
+        Mod2Mask,
+        LockMask | Mod2Mask
+};
 
 
 Window windows[MAX_WINDOWS];
@@ -58,10 +65,12 @@ int main(int argc, char* argv[]) {
         move_left_keycode = XKeysymToKeycode(display, MOVE_LEFT_KEY);
         move_right_keycode = XKeysymToKeycode(display, MOVE_RIGHT_KEY);
 
-        XGrabKey(display, start_terminal_keycode, AnyModifier, root, True, GrabModeAsync, GrabModeAsync);
-        XGrabKey(display, kill_window_keycode, AnyModifier, root, True, GrabModeAsync, GrabModeAsync);
-        XGrabKey(display, move_left_keycode, AnyModifier, root, True, GrabModeAsync, GrabModeAsync);
-        XGrabKey(display, move_right_keycode, AnyModifier, root, True, GrabModeAsync, GrabModeAsync);
+        for (int i = 0; i < sizeof(EXTRA_MODIFIERS)/sizeof(EXTRA_MODIFIERS[0]); i++) {
+                XGrabKey(display, start_terminal_keycode, MODIFIER | EXTRA_MODIFIERS[i], root, True, GrabModeAsync, GrabModeAsync);
+                XGrabKey(display, kill_window_keycode, MODIFIER | EXTRA_MODIFIERS[i], root, True, GrabModeAsync, GrabModeAsync);
+                XGrabKey(display, move_left_keycode, MODIFIER | EXTRA_MODIFIERS[i], root, True, GrabModeAsync, GrabModeAsync);
+                XGrabKey(display, move_right_keycode, MODIFIER | EXTRA_MODIFIERS[i], root, True, GrabModeAsync, GrabModeAsync);
+        }
 
         XSync(display, False);
 
