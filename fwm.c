@@ -116,6 +116,8 @@ int main(int argc, char* argv[]) {
                         selected_window_index--;
                         if (selected_window_index == -1) selected_window_index = 0;
 
+                        if (windows_count == 0) continue;
+
                         XRaiseWindow(display, windows[selected_window_index]);
 
                         XSetInputFocus(display, windows[selected_window_index], RevertToParent, CurrentTime);
@@ -132,7 +134,7 @@ int main(int argc, char* argv[]) {
                                 XKillClient(display, windows[selected_window_index]);
                         }
                         else if (event.xkey.keycode == move_left_keycode) {
-                                if (windows_count == 0) continue;
+                                if (windows_count <= 1) continue;
 
                                 if (selected_window_index == 0)
                                         selected_window_index = windows_count-1;
@@ -144,7 +146,7 @@ int main(int argc, char* argv[]) {
                                 XSetInputFocus(display, windows[selected_window_index], RevertToParent, CurrentTime);
                         }
                         else if (event.xkey.keycode == move_right_keycode) {
-                                if (windows_count == 0) continue;
+                                if (windows_count <= 1) continue;
 
                                 if (selected_window_index == windows_count-1)
                                         selected_window_index = 0;
@@ -155,6 +157,17 @@ int main(int argc, char* argv[]) {
 
                                 XSetInputFocus(display, windows[selected_window_index], RevertToParent, CurrentTime);
                         }
+                }
+                else if (event.type == ConfigureRequest) { // Required; ignore
+                        XWindowChanges wc;
+                        wc.sibling = event.xconfigurerequest.above;
+                        wc.stack_mode = event.xconfigurerequest.detail;
+                        XConfigureWindow(
+                                display,
+                                event.xconfigurerequest.window,
+                                event.xconfigurerequest.value_mask & (CWSibling | CWStackMode),
+                                &wc
+                        );
                 }
         }
 
