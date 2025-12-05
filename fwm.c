@@ -34,6 +34,12 @@ KeyCode move_right_keycode;
 
 char* terminal_emulator;
 
+int (*default_x_error_handler)(Display*, XErrorEvent*);
+int x_error_handler(Display* display, XErrorEvent* error_event) {
+        if (error_event->error_code == BadWindow) return 0;
+
+        return default_x_error_handler(display, error_event);
+}
 int main(int argc, char* argv[]) {
         if (argc != 2) {
                 puts("USAGE: fwm <TERMINAL_EMULATOR>");
@@ -48,6 +54,8 @@ int main(int argc, char* argv[]) {
                 fprintf(stderr, "ERROR: Failed to connect to X server\n");
                 return 1;
         }
+
+        default_x_error_handler = XSetErrorHandler(x_error_handler);
 
         int screen = DefaultScreen(display);
         int screen_width = DisplayWidth(display, screen);
@@ -101,10 +109,10 @@ int main(int argc, char* argv[]) {
 
                         XSetInputFocus(display, event.xmaprequest.window, RevertToParent, CurrentTime);
                 }
-                else if (event.type == DestroyNotify) { // Remove from windows array
+                else if (event.type == DestroyNotify || event.type == UnmapNotify) { // Remove from windows array
                         int window_index = -1;
                         for (int i = 0; i < windows_count; i++) {
-                                if (windows[i] == event.xdestroywindow.window) { window_index = i; break; }
+                                if (windows[i] == ((event.type == DestroyNotify) ? event.xdestroywindow.window : event.xunmap.window)) { window_index = i; break; }
                         }
 
                         if (window_index == -1) continue;
