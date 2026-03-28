@@ -5,11 +5,12 @@ Fullscreen-only minimalistic X11 window manager
 
 # Install
 1) `sudo mv fwm /usr/bin/`
-2) `echo "exec fwm <YOUR_TERMINAL_EMULATOR>" > ~/.xinitrc`
+2) `echo "exec fwm <YOUR_TERMINAL_EMULATOR> [SCREENSHOT_TOOL] [SCREENSHOT_TOOL_ARGS...]" > ~/.xinitrc`
 
 # Usage
 `startx`
-- Win+Space = launch terminal (intended to be used with https://github.com/GeeTwentyFive/LinuxQuietExec)
+- Win+Space = launch terminal (terminal then intended to be used with https://github.com/GeeTwentyFive/LinuxQuietExec)
 - Win+Escape = kill selected window
 - Win+X = decrement selected window index
 - Win+C = increment selected window index
+- Win+S = launch screenshot tool

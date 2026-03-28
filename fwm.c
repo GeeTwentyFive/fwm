@@ -1,5 +1,6 @@
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
+#include <X11/Xproto.h>
 
 #include <stdio.h>
 #include <unistd.h>
@@ -12,6 +13,7 @@
 #define KILL_WINDOW_KEY XK_Escape // Kill focused window
 #define MOVE_LEFT_KEY XK_X // Decrement selected window index
 #define MOVE_RIGHT_KEY XK_C // Increment selected window index
+#define SCREENSHOT_KEY XK_S // Screenshot
 
 const int EXTRA_MODIFIERS[] = {
         0,
@@ -31,22 +33,30 @@ KeyCode start_terminal_keycode;
 KeyCode kill_window_keycode;
 KeyCode move_left_keycode;
 KeyCode move_right_keycode;
+KeyCode screenshot_keycode;
 
 char* terminal_emulator;
+char* screenshot_tool = NULL;
+char** screenshot_tool_args = NULL;
 
 int (*default_x_error_handler)(Display*, XErrorEvent*);
 int x_error_handler(Display* display, XErrorEvent* error_event) {
-        if (error_event->error_code == BadWindow) return 0;
+        if (
+                error_event->error_code == BadWindow ||
+                (error_event->request_code == X_SetInputFocus && error_event->error_code == BadMatch)
+        ) return 0;
 
         return default_x_error_handler(display, error_event);
 }
 int main(int argc, char* argv[]) {
-        if (argc != 2) {
-                puts("USAGE: fwm <TERMINAL_EMULATOR>");
+        if (argc < 2) {
+                puts("USAGE: fwm <TERMINAL_EMULATOR> [SCREENSHOT_TOOL] [SCREENSHOT_TOOL_ARGS...]");
                 return 1;
         }
 
         terminal_emulator = argv[1];
+        screenshot_tool = (argc >= 3) ? argv[2] : NULL;
+        screenshot_tool_args = (argc >= 4) ? &argv[2] : NULL;
 
 
         Display* display = XOpenDisplay(NULL);
@@ -72,12 +82,14 @@ int main(int argc, char* argv[]) {
         kill_window_keycode = XKeysymToKeycode(display, KILL_WINDOW_KEY);
         move_left_keycode = XKeysymToKeycode(display, MOVE_LEFT_KEY);
         move_right_keycode = XKeysymToKeycode(display, MOVE_RIGHT_KEY);
+        screenshot_keycode = XKeysymToKeycode(display, SCREENSHOT_KEY);
 
         for (int i = 0; i < sizeof(EXTRA_MODIFIERS)/sizeof(EXTRA_MODIFIERS[0]); i++) {
                 XGrabKey(display, start_terminal_keycode, MODIFIER | EXTRA_MODIFIERS[i], root, True, GrabModeAsync, GrabModeAsync);
                 XGrabKey(display, kill_window_keycode, MODIFIER | EXTRA_MODIFIERS[i], root, True, GrabModeAsync, GrabModeAsync);
                 XGrabKey(display, move_left_keycode, MODIFIER | EXTRA_MODIFIERS[i], root, True, GrabModeAsync, GrabModeAsync);
                 XGrabKey(display, move_right_keycode, MODIFIER | EXTRA_MODIFIERS[i], root, True, GrabModeAsync, GrabModeAsync);
+                XGrabKey(display, screenshot_keycode, MODIFIER | EXTRA_MODIFIERS[i], root, True, GrabModeAsync, GrabModeAsync);
         }
 
         XSync(display, False);
@@ -164,6 +176,13 @@ int main(int argc, char* argv[]) {
                                 XRaiseWindow(display, windows[selected_window_index]);
 
                                 XSetInputFocus(display, windows[selected_window_index], RevertToParent, CurrentTime);
+                        }
+                        else if (event.xkey.keycode == screenshot_keycode) {
+                                if (screenshot_tool == NULL) continue;
+
+                                if (fork() == 0) {
+                                        execvp(screenshot_tool, screenshot_tool_args);
+                                }
                         }
                 }
                 else if (event.type == ConfigureRequest) { // Required; ignore
