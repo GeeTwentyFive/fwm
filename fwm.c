@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <signal.h>
 
 
 #define MAX_WINDOWS 64
@@ -94,6 +95,8 @@ int main(int argc, char* argv[]) {
 
         XSync(display, False);
 
+        signal(SIGCHLD, SIG_IGN);
+
         XEvent event;
         for (;;) {
                 XNextEvent(display, &event);
@@ -146,6 +149,7 @@ int main(int argc, char* argv[]) {
                         if (event.xkey.keycode == start_terminal_keycode) {
                                 if (fork() == 0) {
                                         execvp(terminal_emulator, NULL);
+                                        _exit(1);
                                 }
                         }
                         else if (event.xkey.keycode == kill_window_keycode) {
@@ -182,6 +186,7 @@ int main(int argc, char* argv[]) {
 
                                 if (fork() == 0) {
                                         execvp(screenshot_tool, screenshot_tool_args);
+                                        _exit(1);
                                 }
                         }
                 }
